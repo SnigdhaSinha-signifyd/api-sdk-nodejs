@@ -1,16 +1,15 @@
-import BaseParameters from "../../parameters";
-import FormData from "form-data"
+import { BaseParameters } from "../../parameters/index";
 
 export class ContextUploadParameters extends BaseParameters {
-	setName(name: string): ContextUploadParameters {
-		this.set("name", name);
+    setName(name: string): ContextUploadParameters {
+        this.set("name", name);
 
-		return this;
-	}
+        return this;
+    }
 
-	setContent(content: any): ContextUploadParameters {
-		this.set("content", content);
+    setContent(content: string): ContextUploadParameters {
+        this.set("content", content);
 
-		return this;
-	}
+        return this;
+    }
 }

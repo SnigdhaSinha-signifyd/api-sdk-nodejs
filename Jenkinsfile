@@ -23,14 +23,12 @@ pipeline {
 
             steps {
                 script {
-                    String scannerHome = tool name: 'sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation';
-                    withSonarQubeEnv('sonar') {
+                    String scannerHome = tool name: 'sonar-next', type: 'hudson.plugins.sonar.SonarRunnerInstallation';
+                    withSonarQubeEnv('sonar-next') {
                         sh "${scannerHome}/bin/sonar-scanner \
+                         -Dsonar.sources=api \
                          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-                         -Dsonar.coverage.exclusions=built/tests/** \
-                         -Dsonar.sources=built \
-                         -Dsonar.exclusions=built/node_modules \
-                         -Dsonar.projectKey=\"api-sdk-nodejs\" \
+                         -Dsonar.projectKey=\"smartling-api-sdk-nodejs\" \
                          -Dsonar.projectName=\"API SDK nodejs\" \
                          -Dsonar.projectVersion=${env.BUILD_NUMBER}"
                     }
@@ -67,12 +65,14 @@ pipeline {
             }
 
             steps {
-                sh 'rm -rf built coverage .nyc_output node_modules test-results.xml'
+                sh 'rm -rf built coverage .nyc_output node_modules test-results.xml package-lock.json .npmrc'
                 sh 'docker run --rm -w `pwd` -v `pwd`:`pwd` node:12.16.1 npm install --production'
                 sh 'docker run --rm -w `pwd` -v `pwd`:`pwd` node:12.16.1 npm run build'
 
-                withCredentials([file(credentialsId: 'node-npmrc-file', variable: 'FILE')]) {
-                    sh 'docker run --rm -w `pwd` -v `pwd`:`pwd` -v $FILE:/root/.npmrc node:12.16.1 npm publish'
+                withCredentials([file(credentialsId: 'node-npmrc-public-file', variable: 'FILE')]) {
+                sh 'docker run --rm -w `pwd` -v `pwd`:`pwd` -v $FILE:`pwd`/.npmrc node:12.16.1 ls -lah `pwd`'
+                    sh 'docker run --rm -w `pwd` -v `pwd`:`pwd` -v $FILE:`pwd`/.npmrc node:12.16.1 cat `pwd`/.npmrc'
+                    sh 'docker run --rm -w `pwd` -v `pwd`:`pwd` -v $FILE:`pwd`/.npmrc node:12.16.1 npm publish --access public'
                 }
             }
         }
