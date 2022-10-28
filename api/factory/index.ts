@@ -1,41 +1,42 @@
-import SmartlingAuthApi from "../auth";
-import SmartlingBaseApi from "../base";
+import { SmartlingAuthApi } from "../auth";
+import { SmartlingBaseApi } from "../base";
 import { Logger } from "./logger";
 
 export class SmartlingApiFactory {
-    private authApiClient: SmartlingAuthApi;
-    private baseUrl: string;
-    private logger: Logger;
+    private readonly authApiClient: SmartlingAuthApi;
 
     constructor(
         userId: string,
         userSecret: string,
-        baseUrl: string,
-        logger: Logger = {
+        private readonly baseUrl: string,
+        private readonly logger: Logger = {
             debug: () => {},
             warn: () => {},
             error: () => {}
-        }
+        },
+        private readonly clientLibId: string = '',
+        private readonly clientLibVersion: string = '',
     ) {
         this.authApiClient = new SmartlingAuthApi(
+            baseUrl,
             userId,
             userSecret,
             logger,
-            baseUrl
         );
         this.baseUrl = baseUrl;
         this.logger = logger;
     }
 
-    public createApiClient<T extends SmartlingBaseApi>(constructor: new (authApi: SmartlingAuthApi, logger, baseUrl: string) => T, options: object = {}): T {
-        const instance = new constructor(this.authApiClient, this.logger, this.baseUrl);
+    public createApiClient<T extends SmartlingBaseApi>(constructor: new (baseUrl: string, authApi: SmartlingAuthApi, logger) => T, options: object = {}): T {
+        const instance = new constructor(this.baseUrl, this.authApiClient, this.logger);
 
         instance.setOptions(
             Object.assign(
                 options,
                 {
                     headers: {
-                        "X-SL-ServiceOrigin": instance.clientLibId
+                        "User-Agent": this.clientLibId === '' ? instance.getClientLibId() : this.clientLibId + '/' + this.clientLibVersion === '' ? instance.getClientLibVersion() : this.clientLibVersion,
+                        "X-SL-ServiceOrigin": this.clientLibId === '' ? instance.getClientLibId() : this.clientLibId,
                     }
                 }
             )
